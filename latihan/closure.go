@@ -7,7 +7,7 @@ type Person struct {
 }
 
 func Closure() {
-	var orang = []*Person{
+	orang := []*Person{
 		{name: "Adi Kusdianto"},
 		{name: "Bambang Wijaya"},
 		{name: "Indah Lestari"},
