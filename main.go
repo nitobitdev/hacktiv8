@@ -1,56 +1,58 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"hacktiv8/latihan"
-	"sync"
+	"net/http"
 )
 
-func main() {
-	var db []*latihan.User
-	user := latihan.NewUserService(db)
-	names := []string{"Ucup", "Wahyono", "Jamilah", "Simorang", "Cahyo", "Andin", "Clara"}
-
-	fmt.Println("________ WITHOUT GOROUTINE ________")
-	// WITHOUT GOROUTINE
-	for _, n := range names {
-		res := user.Register(&latihan.User{Nama: n})
-		fmt.Println(res)
-	}
-
-	getUser := user.GetUser()
-	fmt.Println("________ GET USER WITHOUT GOROUTINE ________")
-
-	for _, v := range getUser {
-		fmt.Println(v.Nama)
-	}
-
-	fmt.Println("________ GOROUTINE ________")
-
-	// WITH GOROUTINE
-	var wg1 sync.WaitGroup
-	wg1.Add(len(names))
-	for _, n := range names {
-		go func(name string) {
-			res := user.Register(&latihan.User{Nama: name})
-			fmt.Println(res)
-			wg1.Done()
-		}(n)
-	}
-	wg1.Wait()
-
-	resGet := user.GetUser()
-	fmt.Println("________ GET USER WITH GOROUTINE ________")
-	var wg sync.WaitGroup
-	wg.Add(len(resGet))
-	for _, v := range resGet {
-		go cetakNama(&wg, v.Nama)
-	}
-	wg.Wait()
-
+type User struct {
+	Name string
 }
 
-func cetakNama(wg *sync.WaitGroup, nama string) {
-	fmt.Println(nama)
-	wg.Done()
+var users = []User{
+	{Name: "Budi Gunawan"},
+	{Name: "Wawan Susanto"},
+	{Name: "Jajan Nurjaman"},
+}
+
+var PORT = ":8080"
+
+func main() {
+	http.HandleFunc("/user", getUsers)
+	http.HandleFunc("/register", createUser)
+
+	fmt.Println("Application is listening on port", PORT)
+	http.ListenAndServe(PORT, nil)
+}
+
+func getUsers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == "GET" {
+		json.NewEncoder(w).Encode(users)
+		return
+	}
+
+	http.Error(w, "Invalid method", http.StatusBadRequest)
+}
+
+func createUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == "POST" {
+		name := r.FormValue("name")
+
+		newUser := User{
+			Name: name,
+		}
+
+		users = append(users, newUser)
+
+		fmt.Fprintf(w, name+" berhasil didaftarkan")
+		return
+	}
+
+	http.Error(w, "Invalid method", http.StatusBadRequest)
+
 }
